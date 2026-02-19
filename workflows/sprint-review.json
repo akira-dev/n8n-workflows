@@ -1,0 +1,1144 @@
+{
+  "name": "sprint-review",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1648,
+        192
+      ],
+      "id": "05f29d74-4e40-4884-bb2d-e2e3b246996f",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "28285e95-0cfd-4e27-9ed8-b619fabdf6ee",
+              "name": "id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "5563e656-54f2-469d-80d6-9197b3dafff7",
+              "name": "key",
+              "value": "={{ $json.key }}",
+              "type": "string"
+            },
+            {
+              "id": "3301ea10-3fd8-4fe1-bf6a-d68cbf7dd6d7",
+              "name": "title",
+              "value": "={{ $json.fields.summary }}",
+              "type": "string"
+            },
+            {
+              "id": "4fd04428-b6ec-4546-b07b-9ddd042cd7b1",
+              "name": "description",
+              "value": "={{ $json.fields.description }}",
+              "type": "string"
+            },
+            {
+              "id": "0ca0e043-d667-44f4-be34-d97b46c49e9e",
+              "name": "epic",
+              "value": "={{ $json.fields.parent.fields.summary }}",
+              "type": "string"
+            },
+            {
+              "id": "788116d3-8459-494a-abe7-23c5eaa31d61",
+              "name": "priority",
+              "value": "={{ $json.fields.priority.name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1216,
+        192
+      ],
+      "id": "c95b64ba-bcd2-4fa4-8dda-9acce278d259",
+      "name": "Extract fields"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.pull_request.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github.v3.diff"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -192,
+        576
+      ],
+      "id": "a4aba602-ba07-4c64-8a9c-c3b85045dd79",
+      "name": "Get PR diff",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "O3oYEGYFBCMzcaq7",
+          "name": "Bearer Auth account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "items",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        576
+      ],
+      "id": "d0d4da65-c283-4f56-bffe-e27ab0650ee5",
+      "name": "Split PRs",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/search/issues?q={{ $json.key }}+in:name+org:tagheuercw+is:pull-request ",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github.v3+json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -560,
+        576
+      ],
+      "id": "e7fcb21c-d046-4ce4-9e20-a6ec3ab5f5ec",
+      "name": "Search GitHub PRs",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "O3oYEGYFBCMzcaq7",
+          "name": "Bearer Auth account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "options": {
+          "jql": "project = \"CWDO\" AND resolved >= -15d AND status = \"Done\" ORDER BY project,priority DESC"
+        }
+      },
+      "type": "n8n-nodes-base.jira",
+      "typeVersion": 1,
+      "position": [
+        -1424,
+        192
+      ],
+      "id": "ad619731-9a4b-49f4-bff9-bef9a3d35278",
+      "name": "Get Backend Jira Board done issues",
+      "credentials": {
+        "jiraSoftwareCloudApi": {
+          "id": "AiHULCeDwiHs5atr",
+          "name": "Jira SW Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -976,
+        192
+      ],
+      "id": "74350298-4b1d-4f82-9f05-f854e7b1aebd",
+      "name": "Loop Over Issues"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "24a575b9-aad4-4a3a-b345-e19cd0d4865c",
+              "name": "title",
+              "value": "={{ $('Loop Over Issues').first().json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "94d2ecdf-5728-4559-81b6-e2c58340cd14",
+              "name": "description",
+              "value": "={{ $('Loop Over Issues').first().json.description }}",
+              "type": "string"
+            },
+            {
+              "id": "ab1b5d46-4c47-446a-b482-370ef2c3e231",
+              "name": "epic",
+              "value": "={{ $('Loop Over Issues').first().json.epic }}",
+              "type": "string"
+            },
+            {
+              "id": "795bb595-97bc-4461-bbe1-a675ede69834",
+              "name": "analyze",
+              "value": "={{ $json.analyze }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        800,
+        720
+      ],
+      "id": "3ce2d2d1-fd8a-4374-94bf-cb87d35b60ec",
+      "name": "Add analyze to issue"
+    },
+    {
+      "parameters": {
+        "sendTo": "pierre.chaisy@tagheuer.com",
+        "subject": "Sprint Review Presentation",
+        "emailType": "text",
+        "message": "Slides du sprint",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        400,
+        -192
+      ],
+      "id": "ff5759c8-cea2-423a-b686-7883f1260ece",
+      "name": "Send presentation",
+      "webhookId": "d1d496da-7d75-48b9-83a8-963ae2f91ae9",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ollama:11434/api/generate",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "mistral"
+            },
+            {
+              "name": "prompt",
+              "value": "={{ $json.prompt }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        416,
+        720
+      ],
+      "id": "c6936058-c1e0-4578-9f7f-4652d8363c5d",
+      "name": "Analayze issue"
+    },
+    {
+      "parameters": {
+        "command": "cp /data/sprint_review_template.pptx /data/sprint_review_$(date +%Y%m%d).pptx  && cat /data/sprint_review_$(date +%Y%m%d).pptx | base64"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        64
+      ],
+      "id": "9b919873-b60d-4471-89f4-49e5ab249020",
+      "name": "Create presentation",
+      "executeOnce": true,
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "import json\n# Loop over input items and add a new field called 'myNewField' to the JSON of each one\ntry:\n  prs_diff = [\n    item.json[\"data\"]\n    for item in _items\n  ]\nexcept AttributeError:\n  prs_diff = []\n\ntitle = _items[0][\"json\"][\"title\"]\ndescription = _items[0][\"json\"][\"description\"]\nepic = _items[0][\"json\"][\"epic\"]\n\nprompt = f\"\"\"\nAct as a Senior Product Engineer, responsible for synthesizing complex development work into a concise, high-level statement for management review.\n\nObjective: Analyze the provided Jira ticket details and associated code modifications (diff) to generate one single sentence that clearly summarizes the development's intent (what was fixed/built) and its final value (the benefit to the product/user).\n\nTone: Clear, professional, and value-driven.\n\nData Provided in JSON format below:\n\n{{\n  \"title\": { title },\n  \"description\": { description },\n  \"epic\": { epic },\n  \"pull_requests_diff\": {json.dumps(prs_diff)},\n}}\n\nSummary Instructions:\n* Synthesize the functional goal (from Jira context) and the technical realization (from the Diff) into a unified statement.\n* The sentence should state what the ticket achieved and its final contribution (e.g., performance gain, new feature enablement, or critical bug resolution).\n\nStrict Format Constraint: The output must be strictly one single sentence in English, without any introduction, conclusion, quotes, bullet points, or extra characters.\n\"\"\"\n  \nreturn [{\n  \"prompt\": prompt\n}]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        720
+      ],
+      "id": "11d1ab82-0fcb-457e-9421-4ffdb8b07886",
+      "name": "Create issue analyze prompt"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "90464181-34e4-44d7-87f9-d531cfd1309a",
+              "name": "title",
+              "value": "={{ $('Loop Over Issues').item.json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "f6bb054e-b8dd-4d63-a34b-210f6cc85860",
+              "name": "description",
+              "value": "={{ $('Loop Over Issues').item.json.description }}",
+              "type": "string"
+            },
+            {
+              "id": "25e4e174-602f-4732-b877-551acb8050c6",
+              "name": "epic",
+              "value": "={{ $('Loop Over Issues').item.json.epic }}",
+              "type": "string"
+            },
+            {
+              "id": "1f3f635a-52c9-4c38-9ce6-770fa8daaee2",
+              "name": "data",
+              "value": "={{ $json.data }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        32,
+        720
+      ],
+      "id": "0b79e6d8-bd26-474b-9dc9-9c648532a4d5",
+      "name": "Create prompt context"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "44bec179-bb4d-4cfb-826e-f74d38243794",
+              "leftValue": "={{ $json.description }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -752,
+        704
+      ],
+      "id": "50f87ec6-202b-4f47-a009-8cdab3758f73",
+      "name": "If no description"
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "# Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfrom collections import defaultdict\nissues_by_epic = defaultdict(list)\n\nfor item in _items:\n  issues_by_epic[item[\"json\"][\"epic\"]].append({\n    \"analyze\": item[\"json\"][\"analyze\"],\n  })\n\n\nreturn [\n  {\n    \"epic\": epic,\n    \"issues\": issues,\n  }\n  for epic, issues in issues_by_epic.items()\n]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -736,
+        64
+      ],
+      "id": "a921017b-41dd-45cd-a3df-a173b9d9e45e",
+      "name": "Group issues by epic"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        176,
+        64
+      ],
+      "id": "b18abf24-2bda-4cae-9e60-8650c70f72e4",
+      "name": "Loop Over epic"
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "import base64\nimport io\nimport os\n\nfrom copy import deepcopy\n\nfrom pptx import Presentation\nfrom pptx.util import Inches\nfrom pptx.util import Pt\n\n# load presentation\nbase64_data = _items[0][\"json\"][\"presentation_file_base64\"]\npptx_binary = base64.b64decode(base64_data)\nin_memory_file = io.BytesIO(pptx_binary)\nprs = Presentation(in_memory_file)\n\n# create new slide from template title content\nslide = prs.slides.add_slide(prs.slide_layouts[3])\n\n# Add content to the content placeholder\n# Find the content placeholder (index 0)\ntitle = slide.placeholders[0]\ntitle_text_frame = title.text_frame\ntitle_text_frame.text = _items[0][\"json\"][\"epic\"] or \"INFRA\"\ntitle_text_frame.paragraphs[0].font.size = Pt(20)\n\n# Add more paragraphs\ncontent = slide.placeholders[1]\ncontent_text_frame = content.text_frame\np1 = content_text_frame.add_paragraph()\np1.text = _items[0][\"json\"][\"analyze\"].split(\"\\n\")[0]\np1.font.size = Pt(12)\n\np2 = content_text_frame.add_paragraph()\np2.text = _items[0][\"json\"][\"analyze\"].split(\"\\n\")[1]\np2.font.size = Pt(12)\n\np3 = content_text_frame.add_paragraph()\np3.text = _items[0][\"json\"][\"analyze\"].split(\"\\n\")[2]\np3.font.size = Pt(12)\n\n# Add background image\nbase64_data = _items[0][\"json\"][\"slide_background_file_base64\"]\npptx_binary = base64.b64decode(base64_data)\nbackground_in_memory_file = io.BytesIO(pptx_binary)\n\npic = slide.shapes.add_picture(\n    background_in_memory_file,\n    Inches(0),\n    Inches(0),\n    width=Inches(10),\n    height=Inches(7.5)\n)\n\n# Move to back\nslide.shapes._spTree.remove(pic._element)\nslide.shapes._spTree.insert(2, pic._element)\n\n# convert presentation to base64\noutput_buffer = io.BytesIO()\nprs.save(output_buffer)\noutput_buffer.seek(0)\nmodified_base64 = base64.b64encode(output_buffer.read()).decode('utf-8')\n\nreturn [{ \"modified_pptx_base64\": modified_base64 }]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2368,
+        160
+      ],
+      "id": "42c3bf2f-0158-45aa-aaee-53810b3d3142",
+      "name": "Add Slide"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "183a2f88-dae5-4029-9534-c0d7f95c08e1",
+              "name": "epics",
+              "value": "={{ $('Group issues by epic').all()",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -256,
+        64
+      ],
+      "id": "bf4eec1a-901c-4213-8e49-e0caa3b86f81",
+      "name": "Recover epics"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "epics",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        64
+      ],
+      "id": "e38abcb1-04e9-4229-9a78-0868b8deb4fb",
+      "name": "Split Epics"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "modified_pptx_base64",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        2576,
+        160
+      ],
+      "id": "43586562-89d1-419b-9048-fca1a606f87d",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/sprint_review_{{ $now.format(\"yyyyMMdd\") }}.pptx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        2768,
+        160
+      ],
+      "id": "b95301cf-2f82-4efe-a48e-0c562ae29e27",
+      "name": "Save presentation"
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "import json\n\nprompt = f\"\"\"\nAct as a Software Architect responsible for synthesizing the technical advancements derived from a set of jira issues.\n\n**Objective:** Analyze the jira issues provided below and extract the **three most significant technical evolutions** for the infrastructure or codebase.\n\n**Format Constraint:** The output must strictly consist of three bullet points separated by an extra line break. Each point must succinctly describe a concrete technical evolution (e.g., adoption of a design pattern, architectural modification, integration of a new library, critical optimization, etc.).\n\n**Tone:** Precise, technical, and professional.\n\n**Ticket Data (JSON):**\n{ json.dumps(_items) }\n\n**Target Output Example:**\nImplement 'Circuit Breaker' pattern on critical external calls.\\nSQL requests optimisations on logs table, 40% latency reduction.\\nCreate v2 for main API for more efficiency.\n\"\"\"\n  \nreturn [{\n  \"prompt\": prompt\n}]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        432,
+        176
+      ],
+      "id": "cde01004-9ff7-4b54-a87e-68ac11e65815",
+      "name": "Create epic analyze prompt"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ollama:11434/api/generate",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "mistral"
+            },
+            {
+              "name": "prompt",
+              "value": "={{ $json.prompt }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        624,
+        176
+      ],
+      "id": "83e194ab-3bb4-4dfe-a409-6a2f911974a4",
+      "name": "Analayze epic issues"
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "import json\nimport datetime\n\nresult = \"\"\n\nfor line in _items[0][\"json\"][\"data\"].split(\"\\n\"):\n if line:\n  try:\n    json_chunk = json.loads(line)\n                    \n    chunk_text = json_chunk.get(\"response\", \"\")\n    result += chunk_text\n    if json_chunk.get(\"done\") is True:\n      break\n  except json.JSONDecodeError:\n    continue\n\nreturn [{\n  \"analyze\": result,\n  \"today\": datetime.datetime.now().strftime(\"%Y%m%d\"),\n}]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        176
+      ],
+      "id": "e65d6b8c-7577-46c5-9726-3cf4e48b42fd",
+      "name": "Reconstruct epic analyze response"
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "import json\n\nresult = \"\"\n\nfor line in _items[0][\"json\"][\"data\"].split(\"\\n\"):\n if line:\n  try:\n    json_chunk = json.loads(line)\n                    \n    chunk_text = json_chunk.get(\"response\", \"\")\n    result += chunk_text\n    if json_chunk.get(\"done\") is True:\n      break\n  except json.JSONDecodeError:\n    continue\n\nreturn [{\n  \"analyze\": result\n}]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        720
+      ],
+      "id": "6ff2f5ce-4af9-4df4-b3a8-1ff9e0a0ea08",
+      "name": "Reconstruct issue analyze response"
+    },
+    {
+      "parameters": {
+        "fileSelector": "=/data/sprint_review_{{ $now.format(\"yyyyMMdd\") }}.pptx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        1312,
+        160
+      ],
+      "id": "68e2ae55-b57c-4c25-bcce-88768ad1127d",
+      "name": "Load Presentation"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "binaryPropertyName": "=data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        1536,
+        160
+      ],
+      "id": "33fac488-43c7-4f23-9157-12a2b649c4f6",
+      "name": "Convert Presentation to base64"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b66e32b6-e45b-401b-a579-1b0c5098f68c",
+              "name": "epic",
+              "value": "={{ $('Loop Over epic').item.json.json.epic }}",
+              "type": "string"
+            },
+            {
+              "id": "ae85dd8c-0a22-44cd-ae46-ff3abb417ec0",
+              "name": "analyze",
+              "value": "={{ $('Reconstruct epic analyze response').item.json.analyze }}",
+              "type": "string"
+            },
+            {
+              "id": "d179c8fc-00ea-4b3d-81df-880af1ba3ce5",
+              "name": "slide_background_file_base64",
+              "value": "={{ $json.slide_background_file_base64 }}",
+              "type": "string"
+            },
+            {
+              "id": "843ca1be-c4c7-463c-9c42-0041f80b1b70",
+              "name": "presentation_file_base64",
+              "value": "={{ $('Convert Presentation to base64').item.json.data }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2160,
+        160
+      ],
+      "id": "8429794c-2ceb-41a0-bdd5-06a1064c343b",
+      "name": "Create slide context"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "destinationKey": "slide_background_file_base64",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        1968,
+        160
+      ],
+      "id": "843f7f79-8e2a-4928-8125-ed622e385dee",
+      "name": "Convert Slide Background to base64"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0471c4da-6ee5-40d7-a269-212a333947e0",
+              "leftValue": "={{ $json.analyze }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1056,
+        176
+      ],
+      "id": "f2f9b877-d32f-44b7-a9cb-b428585e86e2",
+      "name": "If analyze is not empty"
+    },
+    {
+      "parameters": {
+        "fileSelector": "/data/slide_background.png",
+        "options": {
+          "dataPropertyName": "data"
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        160
+      ],
+      "id": "167cf040-3035-400d-8ec6-a2af8bbb64f6",
+      "name": "Load Slide Background"
+    },
+    {
+      "parameters": {
+        "content": "## Summarize issue info",
+        "height": 448,
+        "width": 1792,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -784,
+        496
+      ],
+      "typeVersion": 1,
+      "id": "fed37315-9255-4dc8-8690-68178b006870",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Add slide to presentation",
+        "height": 368,
+        "width": 1744
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1248,
+        48
+      ],
+      "typeVersion": 1,
+      "id": "c62ba815-eb55-4d75-b25c-c42c16981c55",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Summarize epic",
+        "height": 368,
+        "width": 640,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        368,
+        48
+      ],
+      "typeVersion": 1,
+      "id": "bc8b06f4-d776-48b3-b696-bd9e19638522",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Create presenatation from template and group issues by epic",
+        "height": 288,
+        "width": 912,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -800,
+        -32
+      ],
+      "typeVersion": 1,
+      "id": "2d46bafe-9c87-4608-b01b-680cdff2a4bc",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Get issues done from Jira",
+        "height": 304,
+        "width": 432,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1488,
+        80
+      ],
+      "typeVersion": 1,
+      "id": "1085ee11-70dc-4378-a7d2-322f17d968cc",
+      "name": "Sticky Note4"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get Backend Jira Board done issues",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract fields": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Issues",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get PR diff": {
+      "main": [
+        [
+          {
+            "node": "Create prompt context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search GitHub PRs": {
+      "main": [
+        [
+          {
+            "node": "Split PRs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split PRs": {
+      "main": [
+        [
+          {
+            "node": "Get PR diff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Backend Jira Board done issues": {
+      "main": [
+        [
+          {
+            "node": "Extract fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Issues": {
+      "main": [
+        [
+          {
+            "node": "Group issues by epic",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If no description",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add analyze to issue": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Issues",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analayze issue": {
+      "main": [
+        [
+          {
+            "node": "Reconstruct issue analyze response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create presentation": {
+      "main": [
+        [
+          {
+            "node": "Recover epics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create issue analyze prompt": {
+      "main": [
+        [
+          {
+            "node": "Analayze issue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create prompt context": {
+      "main": [
+        [
+          {
+            "node": "Create issue analyze prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If no description": {
+      "main": [
+        [
+          {
+            "node": "Search GitHub PRs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create prompt context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Group issues by epic": {
+      "main": [
+        [
+          {
+            "node": "Create presentation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over epic": {
+      "main": [
+        [
+          {
+            "node": "Send presentation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create epic analyze prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Slide": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recover epics": {
+      "main": [
+        [
+          {
+            "node": "Split Epics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Epics": {
+      "main": [
+        [
+          {
+            "node": "Loop Over epic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Save presentation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save presentation": {
+      "main": [
+        [
+          {
+            "node": "Loop Over epic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create epic analyze prompt": {
+      "main": [
+        [
+          {
+            "node": "Analayze epic issues",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analayze epic issues": {
+      "main": [
+        [
+          {
+            "node": "Reconstruct epic analyze response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reconstruct epic analyze response": {
+      "main": [
+        [
+          {
+            "node": "If analyze is not empty",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reconstruct issue analyze response": {
+      "main": [
+        [
+          {
+            "node": "Add analyze to issue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Presentation": {
+      "main": [
+        [
+          {
+            "node": "Convert Presentation to base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Presentation to base64": {
+      "main": [
+        [
+          {
+            "node": "Load Slide Background",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create slide context": {
+      "main": [
+        [
+          {
+            "node": "Add Slide",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Slide Background to base64": {
+      "main": [
+        [
+          {
+            "node": "Create slide context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If analyze is not empty": {
+      "main": [
+        [
+          {
+            "node": "Load Presentation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over epic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Slide Background": {
+      "main": [
+        [
+          {
+            "node": "Convert Slide Background to base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "39ece29a-edaa-466a-ad3c-72de2902e9bb",
+  "meta": {
+    "instanceId": "bd850f592461042b3fe03099eebb7570b8db5705e90eba84ddf84d0d007715e1"
+  },
+  "id": "J4k3cmPvgwyCVUVo",
+  "tags": []
+}

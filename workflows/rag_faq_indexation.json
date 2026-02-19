@@ -1,0 +1,257 @@
+{
+  "name": "rag_faq_indexation",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "5c675ea4-caae-4e44-8d9a-a5b8b3b791df",
+      "name": "Manual Trigger - INDEXATION",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -384,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "import json\nfrom datetime import datetime\n\n# Transformer chaque Q&A en format pour Pinecone\nresult = []\nfor index, item in enumerate(_items[0]['json']['data']):\n    question = item.get('question', '')\n    answer = item.get('answer', '')\n    \n    result.append({\n        'json': {\n            'pageContent': f'Question: {question}\\n\\nRéponse: {answer}',\n            'metadata': {\n                'id': f'faq_{index}',\n                'question': question,\n                'answer': answer,\n                'indexed_at': datetime.utcnow().isoformat() + 'Z'\n            }\n        }\n    })\n\nreturn result"
+      },
+      "id": "bb9851fc-9a6f-40a8-8e57-1800562be495",
+      "name": "Formater pour Pinecone",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "rag-tagheuer",
+          "mode": "list",
+          "cachedResultName": "rag-tagheuer"
+        },
+        "options": {}
+      },
+      "id": "73ad2d07-3c77-4725-8cc2-15cb0954a5f3",
+      "name": "Insérer dans Pinecone",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1,
+      "position": [
+        496,
+        560
+      ],
+      "credentials": {
+        "pineconeApi": {
+          "id": "86LVm0miWiNgsQFH",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "result",
+              "name": "result",
+              "value": "={{ `Indexation terminée: ${$input.all().length} documents insérés dans Pinecone` }}",
+              "type": "string"
+            },
+            {
+              "id": "index_name",
+              "name": "index_name",
+              "value": "faq-tagheuer",
+              "type": "string"
+            },
+            {
+              "id": "namespace",
+              "name": "namespace",
+              "value": "connected",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8ab0f5cb-a3a9-49b2-8595-8150461e19c2",
+      "name": "Résultat indexation",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        848,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "1DSAxdAnx4lRJYwbHNWpeGbeXxsHtJHTl",
+          "mode": "list",
+          "cachedResultName": "faq.json",
+          "cachedResultUrl": "https://drive.google.com/file/d/1DSAxdAnx4lRJYwbHNWpeGbeXxsHtJHTl/view?usp=drivesdk"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -176,
+        560
+      ],
+      "id": "4723e421-b876-4b55-9fc4-308d90c0c455",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zeI0I1HVx9D7GCJ2",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "fromJson",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        16,
+        560
+      ],
+      "id": "a79614ca-1eb0-4f69-8106-1998f9cb9f7f",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        688,
+        768
+      ],
+      "id": "eba6b9ee-a910-48a3-b5bd-03742823cd08",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-small",
+        "options": {}
+      },
+      "id": "486426ac-aafb-4728-a222-aae8f88cb8ab",
+      "name": "OpenAI Embeddings (Indexation)",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1,
+      "position": [
+        496,
+        768
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "IpiYY7CbpGP1PIAx",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Formater pour Pinecone": {
+      "main": [
+        [
+          {
+            "node": "Insérer dans Pinecone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insérer dans Pinecone": {
+      "main": [
+        [
+          {
+            "node": "Résultat indexation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger - INDEXATION": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Formater pour Pinecone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Insérer dans Pinecone",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Embeddings (Indexation)": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Insérer dans Pinecone",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "c4a5369a-52b8-4d2e-a296-8d3f62e563cb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bd850f592461042b3fe03099eebb7570b8db5705e90eba84ddf84d0d007715e1"
+  },
+  "id": "wzqzhTh4f9d04Plz",
+  "tags": []
+}

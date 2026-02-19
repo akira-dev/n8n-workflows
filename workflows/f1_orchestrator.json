@@ -1,0 +1,462 @@
+{
+  "name": "f1_orchestrator",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5ca60d0b-6067-4d2d-86e6-53bd0436644d",
+              "leftValue": "={{ $json.gp_in_progress }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -208,
+        -112
+      ],
+      "id": "90c56043-e4b2-4dc1-989c-89870a2708ad",
+      "name": "Sould Check Results"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8b0b8013-0e4e-4833-95cb-c2a64abc60ed",
+              "leftValue": "={{ $json.teasing_time }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -208,
+        80
+      ],
+      "id": "2e161185-239e-480f-8aef-78a51fcf87df",
+      "name": "Should make teasing"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "tH1pLN2VuETRnvu1",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/tH1pLN2VuETRnvu1",
+          "cachedResultName": "f1_session_checker"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "gp_url": "={{ $json.gp.json.url }}",
+            "current_season": "={{ $('Season Name').first().json[\"current_season\"] }}",
+            "gp_id": "={{ $json.gp.json.gp_id }}"
+          },
+          "matchingColumns": [
+            "gp_json_url"
+          ],
+          "schema": [
+            {
+              "id": "gp_url",
+              "displayName": "gp_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "current_season",
+              "displayName": "current_season",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "gp_id",
+              "displayName": "gp_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        64,
+        -128
+      ],
+      "name": "Session Ended Checker",
+      "id": "c4f8ec2b-f2b4-4fac-82c8-d1ad777c9b4b"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "ZiVOce02eVFhki5e",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/ZiVOce02eVFhki5e",
+          "cachedResultName": "f1_rbr_drivers_checker"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -704,
+        -224
+      ],
+      "name": "RBR Drivers Checker",
+      "id": "99a4e8c3-4cb0-4bdf-b18c-e75bee5336fa"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "az1d5UVR85TBtrSQ",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/az1d5UVR85TBtrSQ",
+          "cachedResultName": "f1_news_checker"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -704,
+        -416
+      ],
+      "name": "News Checker",
+      "id": "77aab322-67be-4106-92fa-7db2b89dac7c"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "930ec7a2-6e89-4247-b3b2-7d2340353bac",
+              "name": "current_season",
+              "value": "2025",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -976,
+        -144
+      ],
+      "id": "6c660500-066b-47da-b3db-fdff9dae9332",
+      "name": "Season Name"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "o8wBNpK0RdzYvwJZ",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/o8wBNpK0RdzYvwJZ",
+          "cachedResultName": "f1_sync_calendar"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [
+            "current_season"
+          ],
+          "schema": [
+            {
+              "id": "current_season",
+              "displayName": "current_season",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -704,
+        -16
+      ],
+      "name": "Sync Calendar",
+      "id": "566452e4-dcd4-4da9-bd37-8e23ce83f667",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "HAws3lek9dACSvlt",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/HAws3lek9dACSvlt",
+          "cachedResultName": "f1_gp_teaser"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "current_season": "={{ $('Season Name').first().json.current_season }}",
+            "gp_id": "={{ $('Create context').item.json.gp.json.gp_id }}",
+            "gp_url": "={{ $('Create context').item.json.gp.json.url }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "current_season",
+              "displayName": "current_season",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "gp_id",
+              "displayName": "gp_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "gp_url",
+              "displayName": "gp_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        64,
+        64
+      ],
+      "id": "a5d9ee4f-2c3d-4a52-9dc2-8d4b87df05d5",
+      "name": "GP Teaser"
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "from datetime import datetime, timedelta, timezone\n\n# Récupération des données du nœud précédent\n# On suppose que chaque item a une propriété 'start' au format ISO\ninput_items = _items\n\ndef check_gp_status(gp_list):\n    now = datetime.now().replace(tzinfo=timezone.utc)\n\n    # Initialisation des flags\n    current_gp = None\n    teasing_time = False\n\n    for item in gp_list:\n        # Adaptation selon la structure de ton JSON n8n\n        # On transforme la string ISO en objet datetime\n        start_date = datetime.fromisoformat(item[\"json\"][\"date\"].replace('Z', '+00:00'))\n\n        # Un GP dure environ 3 jours (du vendredi au dimanche inclus)\n        end_date = start_date + timedelta(days=2, hours=23)\n\n        # 1. Vérification si un GP est en cours\n        if start_date <= now <= end_date:\n            current_gp = item\n\n        # 2. Vérification si on est 3 jours avant le début (Teasing)\n        # Fenêtre : entre (start - 3 jours) et le moment du départ\n        teasing_window_start = start_date - timedelta(days=3)\n        if teasing_window_start <= now < start_date:\n            teasing_time = True\n\n    result = {\n        # \"gp_in_progress\": True if current_gp else False,\n        \"gp_in_progress\": True,\n        # \"teasing_time\": teasing_time,\n        \"teasing_time\": True,\n    }\n\n    # if current_gp:\n    #     result.update({\"gp\": gp})\n    del item[\"pairedItem\"]\n    result.update({\"gp\": gp_list[6]})\n\n    return result\n\n# Calcul du résultat\nresult_data = check_gp_status(input_items)\n\n# n8n attend une liste d'objets en retour\nreturn [{\"json\": result_data}]"
+      },
+      "name": "Create context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        -16
+      ],
+      "id": "967976a4-5222-4a91-84d3-08d78bd6696a"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8,14,20 * * *"
+            }
+          ]
+        }
+      },
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1184,
+        -144
+      ],
+      "id": "326a23b4-24ce-4cbd-9a47-7f7c6fb91b87"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Sould Check Results": {
+      "main": [
+        [
+          {
+            "node": "Session Ended Checker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should make teasing": {
+      "main": [
+        [
+          {
+            "node": "GP Teaser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Season Name": {
+      "main": [
+        [
+          {
+            "node": "News Checker",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RBR Drivers Checker",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Sync Calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync Calendar": {
+      "main": [
+        [
+          {
+            "node": "Create context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create context": {
+      "main": [
+        [
+          {
+            "node": "Sould Check Results",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Should make teasing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Season Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timeSavedMode": "fixed",
+    "timezone": "Europe/Paris",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true
+  },
+  "versionId": "8a208817-5b61-467b-ba76-edaef86f8528",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bd850f592461042b3fe03099eebb7570b8db5705e90eba84ddf84d0d007715e1"
+  },
+  "id": "ICgZzrZXMf1eaJio",
+  "tags": [
+    {
+      "updatedAt": "2025-12-21T20:49:47.321Z",
+      "createdAt": "2025-12-21T20:49:47.321Z",
+      "id": "g2RZ6aZqnrf9twHi",
+      "name": "formula1"
+    }
+  ]
+}

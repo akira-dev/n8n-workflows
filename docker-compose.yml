@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # 1. Service Ollama (Le LLM local)
+  ollama:
+    container_name: ollama
+    # Utilise l'image officielle d'Ollama
+    image: ollama/ollama
+    # Expose le port par défaut pour que le système hôte puisse y accéder
+    ports:
+      - "11434:11434"
+    # Monte un volume pour stocker les modèles LLM téléchargés (persistance des données)
+    volumes:
+      - ollama_models:/root/.ollama
+    # Démarrage automatique
+    restart: always
+
+  # 2. Service n8n
+  n8n:
+    image: n8nio/n8n:2.1.4
+    container_name: n8n-main
+    environment:
+      # Configure l'URL de base pour l'interface web de n8n
+      - N8N_HOST=localhost  # Commenter pour ngrok
+      - N8N_PORT=5678  # Commenter pour ngrok
+      - N8N_PROTOCOL=http  # Commenter pour ngrok
+      # - N8N_PROTOCOL=https
+      # - WEBHOOK_URL=https://reva-kaolinic-colton.ngrok-free.dev
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_RUNNERS_MODE=external
+      - N8N_RUNNERS_BROKER_LISTEN_ADDRESS=0.0.0.0
+      - N8N_RUNNERS_AUTH_TOKEN=test
+      - N8N_NATIVE_PYTHON_RUNNER=true
+      - N8N_API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2ZTc3OWEzMC1hOTE2LTRmYjQtYTFjNC0xYTkxZTdhZDJlZDgiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzY2NTI2MjAzfQ.lqHRzb6mvGPgNYhhsz-phumhOILLS_HWjWS9ahpw4FY
+      - N8N_BASIC_AUTH_ACTIVE=false
+      - N8N_FEATURE_FLAG_MCP=true
+      - N8N_SECURE_COOKIE=false
+      - N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
+    depends_on:
+      - ollama
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n_files:/data
+      - ./n8n-task-runners.json:/etc/n8n-task-runners.json
+
+  task-runners:
+    image: n8nio/runners:custom
+    container_name: n8n-runners
+    environment:
+      - N8N_RUNNERS_TASK_BROKER_URI=http://n8n-main:5679
+      - N8N_RUNNERS_AUTH_TOKEN=test
+    depends_on:
+      - n8n
+    volumes:
+      - ./n8n_files:/data
+
+# Volumes pour la persistance des données
+volumes:
+  ollama_models:
+  n8n_data:

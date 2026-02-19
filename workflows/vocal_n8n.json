@@ -1,0 +1,285 @@
+{
+  "name": "vocal_n8n",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b55c8008-e8be-49f7-afa3-57a4a24c4306",
+      "name": "Telegram Trigger",
+      "webhookId": "ec1b266e-ff2a-49ec-9005-4b152f33533c",
+      "credentials": {
+        "telegramApi": {
+          "id": "tL0Mjc4JHEGufwC7",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{$json.message.voice.file_id}}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "f8723fd8-8f15-413d-af42-0bfdce1a8692",
+      "name": "Get a file",
+      "webhookId": "ab735385-3b9b-45ed-8aab-6ee42d925be8",
+      "credentials": {
+        "telegramApi": {
+          "id": "tL0Mjc4JHEGufwC7",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "item = _items[0]\nbinary_data = item['binary']['data']\n\n# Modifier le nom du fichier\nbinary_data['fileName'] = 'audio.opus'\n\nreturn [item]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "ae7b767a-2d42-40f2-8f5b-846a89bf811f",
+      "name": "Rename file"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/audio/transcriptions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "multipart/form-data"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "=data"
+            },
+            {
+              "name": "model",
+              "value": "whisper-large-v3"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        640,
+        0
+      ],
+      "id": "7812a200-6cc0-4d07-976b-9ed957b073e7",
+      "name": "Audio to text Groq",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "q0n3mj4oXPIpD9xB",
+          "name": "Groq"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Tu es un ingénieur workflow n8n expert, spécialisé dans la génération de code JSON valide et prêt à l'emploi.\n\nTON UNIQUE TÂCHE :\nTransformer la description textuelle fournie par l'utilisateur en un objet JSON n8n complet et valide.\n\nRÈGLES STRICTES DE SORTIE :\n1. FORMAT : Tu DOIS sortir UNIQUEMENT l'objet JSON.\n2. PAS DE TEXTE SUPPLÉMENTAIRE : Tu NE DOIS inclure AUCUN texte d'introduction, conclusion, explication, pas de retour à la ligne ou démarquage Markdown (NE JAMAIS utiliser ```json ou ```).\n3. VALIDATION : Le JSON généré DOIT être prêt à être importé directement via l'API n8n.\n4. DÉCLENCHEUR : Chaque workflow DOIT commencer par un nœud déclencheur ('trigger'), tel que 'Webhook', 'Manual Trigger', ou 'Cron'.\n5. Rajoute la clé settings avec les valeurs nécessaires basic pour que la requete soit acceptée par l'api de n8n.\n6. Ne rajoute aucune autre clé dans le json final que name; nodes et settings.\n\nSTRUCTURE DU WORKFLOW (JSON) :\n* Utilise la version '1' pour le format de l'interface ('version').\n* Utilise 'node' comme type de nœud pour les fonctions standards (Set, Code, HTTP Request).\n* Rajoute le nom du worflow dans une clé name à la racine de la réponse json.\n* Voici un example de body json tu dois remplacer uniquement les clés nodes, name et connections si c'est necessaires mais pas settings. Tu dois absolument ajouter les informations de formatting json avant et après.\n```json{\n  \"name\": \"Workflow 1\",\n  \"nodes\": [\n  ],\n  \"connections\": {\n  },\n  \"settings\": {\n    \"saveExecutionProgress\": true,\n    \"saveManualExecutions\": true,\n    \"saveDataErrorExecution\": \"all\",\n    \"saveDataSuccessExecution\": \"all\",\n    \"availableInMCP\": false\n  }\n}```\n\nINSTRUCTIONS SPÉCIFIQUES POUR LES NŒUDS :\n* NŒUDS DE DÉCLENCHEMENT (TRIGGERS) : Toujours utiliser l'option 'manual' pour 'triggerFunction' sauf si spécifié.\n* NŒUD HTTP : Pour les appels API (ex: Groq, OpenAI), utilise le nœud 'n8n-nodes-base.httpRequest'. Assure-toi que les champs 'url' et 'method' sont correctement définis.\n* CONNEXIONS : Assure-toi que les nœuds sont correctement reliés en utilisant l'index de sortie (0).\n* DONNÉES BINAIRES : Pour les nœuds qui manipulent des fichiers, utilise les champs 'binaryData' et assure-toi que les expressions binaires sont correctement échappées (ex: '={{$binary.data}}').\n* EXPRESSIONS : Utilise le format d'expression n8n standard (ex: {{ $json.fieldName }}).\n\nEXEMPLE (Ne génère PAS l'exemple, c'est pour référence seulement) :\nSi l'utilisateur demande : \"Un workflow qui reçoit des données via un webhook et renvoie \"OK\" au client.\"\nTu dois générer le JSON COMPLET pour un nœud Webhook suivi d'un nœud Respond to Webhook.\n\nDESCRIPTION DE L'UTILISATEUR (Ceci est le texte que tu vas recevoir et traiter) :\n{{ $json.text }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.8,
+      "position": [
+        848,
+        0
+      ],
+      "id": "302fd361-049f-41b7-9237-24b01941e865",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "typeVersion": 1,
+      "position": [
+        848,
+        208
+      ],
+      "id": "bfb2c069-6df0-490b-bcfe-fc7fa89b8274",
+      "name": "Mistral Cloud Chat Model",
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "0G8plADxfa0ODKsC",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5678/api/v1/workflows",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2ZTc3OWEzMC1hOTE2LTRmYjQtYTFjNC0xYTkxZTdhZDJlZDgiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzY2NTI2MjAzfQ.lqHRzb6mvGPgNYhhsz-phumhOILLS_HWjWS9ahpw4FY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1360,
+        0
+      ],
+      "id": "590f8807-35c0-4c20-aacd-78bddfbdf900",
+      "name": "Create workflow in n8n"
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "import json\nimport re\n\nresults = []\n\nfor item in _items:\n  response = item[\"json\"][\"text\"]\n\n  response = re.sub(r'```json\\n?', '', response, flags=re.IGNORECASE)\n  response = re.sub(r'```\\n?', '', response).strip()\n  results.append(json.loads(response))\n\nreturn results\n"
+      },
+      "id": "6adbd7d0-5f00-4c98-8ce0-dc904659644a",
+      "name": "Parse json",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        0
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "Rename file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rename file": {
+      "main": [
+        [
+          {
+            "node": "Audio to text Groq",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio to text Groq": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mistral Cloud Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Parse json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse json": {
+      "main": [
+        [
+          {
+            "node": "Create workflow in n8n",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "d1aba4c8-1cf2-4434-8c60-39cd0a892cc7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bd850f592461042b3fe03099eebb7570b8db5705e90eba84ddf84d0d007715e1"
+  },
+  "id": "x12zbXKPw5liF7Ns",
+  "tags": []
+}

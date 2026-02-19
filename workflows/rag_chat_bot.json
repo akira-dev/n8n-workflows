@@ -1,0 +1,214 @@
+{
+  "name": "rag_chat_bot",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "maxTokens": 500,
+          "temperature": 0.2
+        }
+      },
+      "id": "87d2d520-0cba-414d-91c7-c57d89202f9a",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        96,
+        80
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "IpiYY7CbpGP1PIAx",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Tu es un assistant spécialisé dans les produits TAG Heuer Connected.\n\nContexte des documents FAQ (les 3 réponses les plus pertinentes):\n{{ $json.context }}\n\nQuestion de l'utilisateur: {{ $('Extraire question').item.json.question }}\n\nInstructions:\n- Réponds UNIQUEMENT en te basant sur le contexte fourni ci-dessus\n- Si la réponse n'est pas dans le contexte, dis \"Je n'ai pas trouvé cette information dans notre FAQ TAG Heuer Connected\"\n- Sois précis, clair et concis\n- Structure ta réponse avec des points si nécessaire\n- Si tu mentionnes une URL, inclus-la dans ta réponse\n\nRéponse:"
+      },
+      "id": "cc8fa226-923e-4f4c-b9b0-92bc4b8c7c01",
+      "name": "LLM Chain - Générer réponse",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        96,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "topK": 3
+      },
+      "id": "023f1281-bd19-4b55-bca3-a8440105c5b4",
+      "name": "Vector Store Retriever",
+      "type": "@n8n/n8n-nodes-langchain.retrieverVectorStore",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "pineconeIndex": "faq-tagheuer",
+        "options": {}
+      },
+      "id": "c55b1153-5b49-4158-9a92-3bb7cd5fe835",
+      "name": "Pinecone Vector Store",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        80
+      ],
+      "credentials": {
+        "pineconeApi": {
+          "id": "86LVm0miWiNgsQFH",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-small",
+        "options": {}
+      },
+      "id": "29053c9a-afb6-487d-b90f-085328ba2eaa",
+      "name": "OpenAI Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        240
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "IpiYY7CbpGP1PIAx",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "user_question",
+              "name": "question",
+              "value": "={{ $json.body.question }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "14ca16ee-6790-4399-9635-91cad93b025d",
+      "name": "Extraire question",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        -464,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -704,
+        -96
+      ],
+      "id": "4c0d03bc-0938-4bb3-ba57-28391683a89a",
+      "name": "When chat message received",
+      "webhookId": "8cbed490-dab7-405a-9b2e-935ae8c3f631"
+    },
+    {
+      "parameters": {
+        "message": "={{ $json }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        448,
+        -112
+      ],
+      "id": "3eccfd44-6125-4a48-b0f9-767ee35bd4b4",
+      "name": "Respond to Chat"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "LLM Chain - Générer réponse",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Chain - Générer réponse": {
+      "main": [
+        [
+          {
+            "node": "Respond to Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Vector Store Retriever",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Extraire question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "f4914c24-c86c-42d7-acd4-acfffae0f403",
+  "meta": {
+    "instanceId": "bd850f592461042b3fe03099eebb7570b8db5705e90eba84ddf84d0d007715e1"
+  },
+  "id": "wojpNo1RDtvjiOVk",
+  "tags": []
+}
